@@ -37,3 +37,10 @@ epsA = A { states = [()]
          , isAccepting = (const True)
          , transition = curry $ const []
          }
+
+symA :: Eq a => a -> Auto a Bool
+symA c = A { states = [True, False]
+           , initStates = [False]
+           , isAccepting = id
+           , transition = (\st l -> if not st && l == c then [True] else [])
+           }
