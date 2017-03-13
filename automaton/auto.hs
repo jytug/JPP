@@ -1,15 +1,14 @@
 import Data.List
 
+-- magic helpers
+comp :: (c -> d) -> (a -> b -> c) -> (a -> b -> d)
+comp = (.) . (.)
+
 data Auto a q = A { states      :: [q]
                   , initStates  :: [q]
                   , isAccepting :: q -> Bool
                   , transition  :: q -> a -> [q]
                   }
-
--- sumA :: Auto a q1 -> Auto a q2 -> Auto a (Either q1 q2)
--- thenA :: Auto a q1 -> Auto a q2 -> Auto a (Either q1 q2)
--- fromLists :: (Eq q, Eq a) => [q] -> [q] -> [q] -> [(q, a, [a])] -> Auto a q
--- toLists :: (Enum a, Bounded a) => Auto a q -> ([q], [q], [q], [(q, a, [q])])
 
 acceptsAcc :: Eq q => Auto a q -> [a] -> [q] -> Bool
 acceptsAcc aut [] acc = any (isAccepting aut) acc
@@ -45,22 +44,47 @@ symA c = A { states = [True, False]
            }
 
 -- gives an automaton that recognizes the same
--- language as <auto>, but which's type is
+-- language as <auto>, but its type is
 -- Either q r, where q is the type of states
 -- of the former automaton
 leftA :: Auto a q -> Auto a (Either q r)
 leftA aut = A { states = map Left $ states aut
               , initStates = map Left $ initStates aut
               , isAccepting = either (isAccepting aut) (const False)
-              , transition = either (\st l -> map Left $ (transition aut st l)) (const $ const [])
+              , transition = either leftTransition rightTransition
               }
+              where leftTransition = (map Left) `comp` (transition aut)
+                    rightTransition = const $ const []
 
 -- an automaton that recognizes languages
 -- that are recognized by both aut1 and aut2
 sumA :: Auto a q1 -> Auto a q2 -> Auto a (Either q1 q2)
-sumA aut1 aut2 = A { states = concat [(map Left $ states aut1) (map Right $ states aut2)]
-                   , initStates = concat
-                       [(map Left $ initStates aut1) (map Right $ initStates aut2)]
-                   , isAccepting = (map Left . isAccepting aut1) (map Right .isAccepting aut2)
-                   , transition = either (transition aut1) (transition aut2)
+sumA aut1 aut2 = A { states = (map Left $ states aut1) ++ (map Right $ states aut2)
+                   , initStates = (map Left $ initStates aut1) ++ (map Right $ initStates aut2)
+                   , isAccepting = either (isAccepting aut1) (isAccepting aut2)
+                   , transition = either leftTransition rightTransition
                    }
+                   where leftTransition = map Left `comp` transition aut1
+                         rightTransition = map Right `comp` transition aut2
+
+-- if <aut1> recognizes the languages L1, and
+-- <aut2> - the language L2, then thenA aut1 aut2
+-- recognizes L1 || L2 (concatenation)
+thenA :: Auto a q1 -> Auto a q2 -> Auto a (Either q1 q2)
+thenA aut1 aut2 = A { states = (map Left $ states aut1) ++ (map Right $ states aut2)
+                    , initStates = (map Left $ states aut1)
+                    , isAccepting = either (const False) (isAccepting aut2)
+                    , transition = either leftTransition rightTransition
+                    }
+                    where leftTransition st l =
+                             if any (isAccepting aut1) ((transition aut1) st l)
+                                then (map Left $ (transition aut1) st l) ++ 
+                                     (map Right $ initStates aut2)
+                                else map Left $ (transition aut1) st l
+                          rightTransition = map Right `comp` transition aut2
+
+-- fromLists :: (Eq q, Eq a) => [q] -> [q] -> [q] -> [(q, a, [a])] -> Auto a q
+-- fromLists states initStates 
+
+-- toLists :: (Enum a, Bounded a) => Auto a q -> ([q], [q], [q], [(q, a, [q])])
+
