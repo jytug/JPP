@@ -4,6 +4,18 @@ import Data.List
 comp :: (c -> d) -> (a -> b -> c) -> (a -> b -> d)
 comp = (.) . (.)
 
+allValues :: (Bounded a, Enum a) => [a]
+allValues = [minBound..]
+
+fst3 :: (a,b,c) -> a
+fst3 (x, _, _) = x
+
+snd3 :: (a,b,c) -> b
+snd3 (_, y, _) = y
+
+trd3 :: (a,b,c) -> c
+trd3 (_, _, z) = z
+
 data Auto a q = A { states      :: [q]
                   , initStates  :: [q]
                   , isAccepting :: q -> Bool
@@ -83,8 +95,26 @@ thenA aut1 aut2 = A { states = (map Left $ states aut1) ++ (map Right $ states a
                                 else map Left $ (transition aut1) st l
                           rightTransition = map Right `comp` transition aut2
 
--- fromLists :: (Eq q, Eq a) => [q] -> [q] -> [q] -> [(q, a, [a])] -> Auto a q
--- fromLists states initStates 
+-- Creates an automaton from a list [states, initStates, accepting, transitions]
+-- if a list contains two or more transition tuples with same
+-- state and character, all are taken into account
+fromLists :: (Eq q, Eq a) => [q] -> [q] -> [q] -> [(q, a, [q])] -> Auto a q
+fromLists states initStates accepting transition =
+    A { states = states
+      , initStates = initStates
+      , isAccepting = flip elem accepting
+      , transition = allTransitions
+      }
+      where allTransitions st l =
+                concat [trd3 x | x <- transition, fst3 x == st && snd3 x == l]
 
--- toLists :: (Enum a, Bounded a) => Auto a q -> ([q], [q], [q], [(q, a, [q])])
-
+-- Returns a list representation of an automaton
+toLists :: (Enum a, Bounded a) => Auto a q -> ([q], [q], [q], [(q, a, [q])])
+toLists aut = (st, init, acc, transit)
+    where st = states aut
+          init = initStates aut
+          acc = [st | st <- states aut, (isAccepting aut) st]
+          transit = [(st, l, tr) |
+                     st <- states aut, l <- allValues,
+                     let tr = (transition aut) st l,
+                     not $ null tr]
