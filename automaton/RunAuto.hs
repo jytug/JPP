@@ -7,23 +7,27 @@ import Text.Read
 import Auto
 
 -- some helpers
-parseIntsMaybe :: [String] -> Maybe [Int]
+parseIntsMaybe :: [String] -> Maybe [Integer]
 parseIntsMaybe l = if any isNothing parsed then Nothing
                    else Just $ catMaybes parsed
                    where parsed = parseInts l
-                         parseInts l = map readMaybe l :: [Maybe Int]
+                         parseInts l = map readMaybe l :: [Maybe Integer]
 
-readNumStates :: String -> Maybe Int
-readNumStates line = readMaybe line :: Maybe Int
+isUpperAlpha :: Char -> Bool
+isUpperAlpha c = (c <= 'Z') && (c >= 'A')
 
-readStateList :: String -> Maybe [Int]
-readStateList line = readMaybe line :: Maybe [Int]
+readNumStates :: String -> Maybe Integer
+readNumStates line = readMaybe line :: Maybe Integer
 
-readTransitions :: [String] -> Maybe [(Int, Char, [Int])]
+readStateList :: String -> Maybe [Integer]
+readStateList line = readMaybe line :: Maybe [Integer]
+
+readTransitions :: [String] -> Maybe [(Integer, Char, [Integer])]
 readTransitions [] = Just []
 readTransitions (trans:rest) = do
-    guard (length allWords >= 3)
-    src <- readMaybe srcWord :: Maybe Int
+    guard $ toInteger (length allWords) >= 3
+    guard $ all isUpperAlpha chars
+    src <- readMaybe srcWord :: Maybe Integer
     dsts <- parseIntsMaybe dstsWords
     restResult <- readTransitions rest
     return $ [(src, c, dsts) | c <- chars] ++ restResult 
@@ -36,6 +40,7 @@ readTransitions (trans:rest) = do
 parseAutoFile :: String -> Maybe Bool
 parseAutoFile contents = do
     guard (length allLines >= 4)
+    guard (all isUpperAlpha word)
     numStates <- readNumStates numStatesLine
     initStates <- readStateList initStatesLine
     acceptingStates <- readStateList acceptingStatesLine
@@ -43,8 +48,8 @@ parseAutoFile contents = do
     let states = nub (initStates ++
                       acceptingStates ++
                       concat [src:dsts | (src, _, dsts) <- transitions])
-    guard (length states >= numStates)
-    let auto = fromLists [1..numStates] initStates acceptingStates transitions
+    guard (toInteger (length states) <= numStates)
+    let auto = fromLists states initStates acceptingStates transitions
     return $ accepts auto word
     where allLines = filter (not . null) $ lines contents
           numStatesLine = head allLines
@@ -57,7 +62,7 @@ parseAutoFile contents = do
 runAuto :: String -> String
 runAuto contents = case parseAutoFile contents of
     Just b    -> show b
-    Nothing   -> "Bad input"
+    Nothing   -> "BAD INPUT"
 
 main = do
     (file:_) <- getArgs
