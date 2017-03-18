@@ -1,3 +1,5 @@
+module Auto(Auto, accepts, emptyA, epsA, symA,
+            leftA, sumA, thenA, fromLists, toLists) where
 import Data.List
 
 -- magic helpers
@@ -21,6 +23,9 @@ data Auto a q = A { states      :: [q]
                   , isAccepting :: q -> Bool
                   , transition  :: q -> a -> [q]
                   }
+
+instance (Show a, Enum a, Bounded a, Show q) => Show (Auto a q) where
+    show aut = "fromLists " ++ (show $ toLists aut)
 
 acceptsAcc :: Eq q => Auto a q -> [a] -> [q] -> Bool
 acceptsAcc aut [] acc = any (isAccepting aut) acc
@@ -68,8 +73,8 @@ leftA aut = A { states = map Left $ states aut
               where leftTransition = (map Left) `comp` (transition aut)
                     rightTransition = const $ const []
 
--- an automaton that recognizes languages
--- that are recognized by both aut1 and aut2
+-- an automaton that recognizes the sum of languages
+-- recognized by aut1 and aut2
 sumA :: Auto a q1 -> Auto a q2 -> Auto a (Either q1 q2)
 sumA aut1 aut2 = A { states = (map Left $ states aut1) ++ (map Right $ states aut2)
                    , initStates = (map Left $ initStates aut1) ++ (map Right $ initStates aut2)
@@ -83,8 +88,12 @@ sumA aut1 aut2 = A { states = (map Left $ states aut1) ++ (map Right $ states au
 -- <aut2> - the language L2, then thenA aut1 aut2
 -- recognizes L1 || L2 (concatenation)
 thenA :: Auto a q1 -> Auto a q2 -> Auto a (Either q1 q2)
-thenA aut1 aut2 = A { states = (map Left $ states aut1) ++ (map Right $ states aut2)
-                    , initStates = (map Left $ states aut1)
+thenA aut1 aut2 = A { states = (map Left $ states aut1) ++
+                               (map Right $ states aut2)
+                    , initStates = (map Left $ initStates aut1) ++
+                                   if any (isAccepting aut1) (initStates aut1)
+                                       then (map Right $ initStates aut2)
+                                       else []
                     , isAccepting = either (const False) (isAccepting aut2)
                     , transition = either leftTransition rightTransition
                     }
