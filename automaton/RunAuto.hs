@@ -8,10 +8,7 @@ import Auto
 
 -- some helpers
 parseIntsMaybe :: [String] -> Maybe [Integer]
-parseIntsMaybe l = if any isNothing parsed then Nothing
-                   else Just $ catMaybes parsed
-                   where parsed = parseInts l
-                         parseInts l = map readMaybe l :: [Maybe Integer]
+parseIntsMaybe = sequence . (map readMaybe)
 
 isUpperAlpha :: Char -> Bool
 isUpperAlpha c = (c <= 'Z') && (c >= 'A')
