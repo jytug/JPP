@@ -46,6 +46,7 @@ parseAutoFile contents = do
                       acceptingStates ++
                       concat [src:dsts | (src, _, dsts) <- transitions])
     guard (toInteger (length states) <= numStates)
+    guard (all (>=0) states)
     let auto = fromLists states initStates acceptingStates transitions
     return $ accepts auto word
     where allLines = filter (not . null) $ lines contents
@@ -54,7 +55,6 @@ parseAutoFile contents = do
           acceptingStatesLine = head $ drop 2 allLines
           transitionsLines = drop 3 $ init allLines
           word = last allLines
-          --auto = fromLists [1..numStates] initStates acceptingStates transitions
 
 runAuto :: String -> String
 runAuto contents = case parseAutoFile contents of
