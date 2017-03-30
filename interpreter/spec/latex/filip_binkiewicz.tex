@@ -1,0 +1,104 @@
+\documentclass[11pt]{article}
+
+
+\usepackage[utf8]{inputenc}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{listings}
+
+% \setlength\parindent{0pt}
+
+\newcommand{\inlinecode}{\texttt}
+
+\title{Languages and Paradigms of Programming \\
+	\large Language specification
+}
+\author{Filip Binkiewicz (332069)}
+\date{\today}
+\begin{document}
+\maketitle
+
+\section{BNF Grammar}
+\begin{align*}
+	\textit{Num} \ni ~&n~::=~0~|~1~|~-1~|~2~|~\dots \\
+	\textit{Var} \ni ~&x~::=~\texttt{x}~|~\texttt{y}~|~\dots \\
+	\textit{Expr} \ni ~&e~::=~n~|~x~|~e_1 + e_2~|~e_1 * e_2~|~e_1 - e_2~|~e_1 / e_2~|\\
+		& ~~~~~~~~~ f(x)~|~f(f_1)~|~x++~|~x-- \\
+	\textit{BExpr} \ni ~&b~::=~\texttt{true}~|~\texttt{false}~|~x~|~e_1 <= e_2~|~e_1 < e_2~|\\
+		& ~~~~~~~~~ e_1 >= e_2~|~e_1 > e_2~|~e_1 == e_2~|\\
+		& ~~~~~~~~~ b_1~\texttt{and}~b_2~|~b_1~\texttt{or}~b_2~|~\texttt{not}~b\\
+	\textit{FExpr} \ni ~&f~::=~x~|~\texttt{lambda (}x\texttt{):}~I\\
+	\textit{Instr} \ni ~&I~::=~x = e~|~x = b~|~x = f~|\\
+		& ~~~~~~~~~ \texttt{while}~b~\texttt{do}~I~|~I_1;I_2~|\\
+		& ~~~~~~~~~ \texttt{if}~b~\texttt{then}~I~|~\texttt{if}~b~\texttt{then}~I_1~\texttt{else}~I_2~|\\
+		& ~~~~~~~~~ \texttt{\{}~d~\texttt{;}~I~\texttt{\}}~|~\texttt{print}~e~|\\
+		& ~~~~~~~~~ \texttt{for}~x~\texttt{ranging from}~e_1~\texttt{to}~e_2~\texttt{do}~I~|\\
+		& ~~~~~~~~~ \texttt{return}~e~|~\texttt{yield}~e~\\
+	\textit{Decl} \ni ~&d~::=~\texttt{int}~x~|~\texttt{bool}~x~|\\
+		& ~~~~~~~~~ \texttt{function}~y\texttt{(}x\texttt{)}~I~|~\texttt{function}~y\texttt{(ref}~x\texttt{)}~I~|\\
+		& ~~~~~~~~~ \texttt{function}~y\texttt{(fun}~x\texttt{)}~I~
+\end{align*}
+
+\section{Remarks}
+\begin{itemize}
+	\item Most of the constructions described in the grammar are standard and won't be explained further --- their meaning can be assumed to replicate their C's equivalents'. All non-trivial constructions are explained in the next section.
+	\item This grammar has not yet been written in a format understood by \texttt{BNFC}, but it will be done shortly. The format imitates the one used in the Semantics and Verification class --- in particular, it does not take account for precedence level in expressions, and I omitted that on purpose, so as to make the grammar more human-readable. Rewriting it might imply some minor changes.
+\end{itemize}
+\section{Explanation}
+Most of the features of this language have been taken from the standard list. Below I will describe the interesting features of this language.
+\begin{itemize}
+	\item General information.
+	\begin{itemize}
+		\item \textbf{One shall not use an undeclared variable!} (this is however not a syntax error as it is not a context-free feature)
+		\item The language is \textbf{statically typed}, meaning exactly what the author of the assignment described so verbosely.
+		\item Runtime errors are explicitly reported.
+	\end{itemize}
+	\item \texttt{if \_ then \_ else} - since there are two versions of this statement, the problem that bothered Pascal's developers appears. We assume that every \texttt{else} corresponds to the \textbf{closest} \texttt{if}, i.e. the program
+	\begin{lstlisting}
+	if false then
+		if true then
+			print 1
+		else
+			print 1
+	\end{lstlisting}
+does not print anything. But, of course, I endorse all programers not to take advantage of this too much.
+	\item \texttt{function}. This language allows to declare three types of functions (all recursive with static visibility):
+	\begin{itemize}
+		\item pass-by-value
+		\item pass-by-reference
+		\item functions with a function parameter (pass-by-value)
+	\end{itemize}
+	All functions \textbf{return an integer value} (0 if a \texttt{return} statement is not met int the function's body).
+	
+	Another important remark is that a function declared as \texttt{function f(fun f)} discards the parameter and inside it every call of \texttt{f} will be a recursive call. Other than that, this is self-explainatory (I hope!).
+	\item \texttt{lambda} denotes an anonymous function which can be assigned to a variable or passed to a function. Lambdas are only pass-by-value and return an integer.
+	\item The Pascal-style \texttt{for} --- I believe this is self-explainatory as well.
+	\item \texttt{print} allows to print an expression (an attempt to print a function variable will raise a ,,compile'' error.
+	\item Blocks work like in C, except that there needs to be at least one semicolon - the one separating declarations from instructions. Hence, the following code is fine:
+	\begin{lstlisting}
+	{ ; print 10 }
+	\end{lstlisting}
+	\item \texttt{yield} works like in Python and is the only feature not described in the standard assignment specification. It allows the programmer to define rather stupid generators:
+	\begin{lstlisting}
+	function f(x)
+	{
+		int i;
+		i = 0;
+		while (true)
+		{
+			yield x + i;
+			i = i + 1
+		}
+	}
+	;
+	print f(1);		// prints 1
+	print f(1);		// prints 2
+	print f(3)		// prints 5
+		
+	\end{lstlisting}
+	A \texttt{yield} instruction outside of a function definition raises a runtime error.
+	\item Comments - this will be done by \texttt{BNFC} and I think I'm going to stick with the \texttt{// comment} and \texttt{/* comment */} tradition.
+\end{itemize}
+
+
+\end{document}
