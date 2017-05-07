@@ -1,0 +1,59 @@
+comment "//" ;
+comment "/*" "*/" ;
+
+Program.    Prog    ::= Stm ;
+
+-- Integer expressions
+EAdd.   Exp     ::= Exp  "+" Exp1 ;
+ESub.   Exp     ::= Exp  "-" Exp1 ;
+EMul.   Exp1    ::= Exp1 "*" Exp2 ;
+EDiv.   Exp1    ::= Exp1 "/" Exp2 ;
+EInt.   Exp2    ::= Integer ;
+
+ECall.  Exp     ::= Ident "(" Exp ")" ;
+EInc.   Exp     ::= Ident "++" ;
+EDec.   Exp     ::= Ident "--" ;
+EVar.   Exp     ::= Ident ;
+
+coercions Exp 2 ;
+
+-- Boolean expressions
+BTrue.  Exp1   ::= "true" ;
+BFalse. Exp1   ::= "false" ;
+BLe.    Exp1   ::= Exp "<=" Exp ;
+BLt.    Exp1   ::= Exp "<" Exp ;
+BGe.    Exp1   ::= Exp ">=" Exp ;
+BGt.    Exp1   ::= Exp ">" Exp ;
+BEq.    Exp1   ::= Exp "==" Exp ;
+BCon.   Exp    ::= Exp "and" Exp1 ;
+BAlt.   Exp    ::= Exp "or" Exp1 ;
+BNeg.   Exp    ::= "not" Exp1 ;
+
+-- Functional expressions
+FLam.   Exp    ::= "lambda" "(" Ident ")" ":" Stm;
+
+terminator Stm  "" ;
+terminator Decl "." ;
+separator Stm ";" ;
+separator Decl "," ;
+
+-- Statements
+SAss.   Stm     ::= Ident "=" Exp ;
+SWhile. Stm     ::= "while" Exp "do" Stm ;
+SIf.    Stm     ::= "if" Exp "then" Stm ;
+SIfEl.  Stm     ::= "if" Exp "then" Stm "else" Stm ;
+SBlock. Stm     ::= "{" [Decl] [Stm] "}" ;
+SPrint. Stm     ::= "print" Exp ;
+SFor.   Stm     ::= "for" Ident "ranging" "from" Exp "to" Exp "do" Stm ;
+SRet.   Stm     ::= "return" Exp ;
+SYield. Stm     ::= "yield" Exp ;
+
+-- Declarations
+DVar.   Decl    ::= Type Ident ;
+DFun.   Decl    ::= "function" Ident "(" Ident ")" Stm ;
+DRFun.  Decl    ::= "function" Ident "(" "ref" Ident ")" Stm ;
+DFFun.  Decl    ::= "function" Ident "(" "fun" Ident ")" Stm ;
+
+-- Types
+TInt.   Type    ::= "int" ;
+TBool.  Type    ::= "bool" ;
