@@ -3,7 +3,7 @@
 
 module Common where
 
-import Control.Monad.Trans.State
-import Control.Monad.Trans.Except
+import Control.Monad.State
+import Control.Monad.Except
 
 type ExceptStateM s m a = ExceptT String (StateT s m) a
