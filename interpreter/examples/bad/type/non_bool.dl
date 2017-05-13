@@ -1,0 +1,2 @@
+// non-boolean expression in a wrong context
+if 1 then print 1

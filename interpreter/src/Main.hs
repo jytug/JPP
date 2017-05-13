@@ -1,7 +1,10 @@
 -- local imports
 import TypeChecker
+
+import AbsLang
 import ParLang
 import LexLang
+import ErrM
 
 -- global imports
 import System.Environment
@@ -11,7 +14,13 @@ parser = pProg . myLexer
 
 usageError :: IO ()
 usageError = do
-    putStrLn "usage: ./main <program file>"
+    putStrLn "usage: ./Main <program file>"
+
+checkType :: Prog -> IO ()
+checkType program = do
+    case typeProg program of
+        (Right _)    -> putStrLn "program type checking went well"
+        (Left error) -> putStrLn $ "type error: " ++ error
 
 main :: IO ()
 main = do
@@ -20,4 +29,6 @@ main = do
         [] -> usageError
         file:_ -> do
             program <- readFile file
-            putStrLn . show $ parser program
+            case parser program of
+                Ok prog   -> checkType prog
+                Bad error -> putStrLn error

@@ -1,0 +1,5 @@
+{
+    function f(x) return x,
+    int y.
+    y = f(f)
+}

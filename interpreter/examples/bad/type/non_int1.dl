@@ -1,0 +1,2 @@
+// non-integer expression in a wrong context
+print true

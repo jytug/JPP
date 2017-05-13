@@ -1,7 +1,7 @@
 -- this module exports functions for checking
 -- the corectness of the program
 
-module TypeChecker where
+module TypeChecker (typeProg) where
 
 -- local imports
 import Common
@@ -22,6 +22,8 @@ err_undecl      = "use of an undeclared variable"
 err_mismatch    = "type mismatch"
 err_non_bool    = "use of a non-boolean expression in wrong context"
 err_non_int     = "use of a non-integer expression in wrong context"
+err_non_call    = "attempt to call a non-callable"
+err_wrong_call  = "poor attempt to call a function"
 
 data ExpType
         = ExpInt
@@ -38,12 +40,6 @@ typeTranslate TBool = ExpBool
 type CState = [Ident -> Either () ExpType]
 type TCheckM a = ExceptStateM CState Identity a
 
-pushState :: CState -> CState
-pushState (s:ss) = s:s:ss
-
-popState :: CState -> CState
-popState (s:ss) = ss
-
 updateCState :: Ident -> ExpType -> CState -> CState
 updateCState x t (s:ss) = (\y -> if y == x then Right t else s y):ss
 
@@ -51,6 +47,11 @@ checkProgType   :: Prog   -> TCheckM ()
 checkStmType    :: Stm    -> TCheckM ()
 checkExpType    :: Exp    -> TCheckM ExpType
 checkDeclType   :: Decl   -> TCheckM ()
+
+-- the exported function
+typeProg :: Prog -> Either String ()
+typeProg p = fst $ runIdentity $ (flip runStateT) [const $ Left ()] $
+             runExceptT $ checkProgType p
 
 -- program type check
 checkProgType (Program stm) = checkStmType stm
@@ -136,13 +137,92 @@ checkExpType (EDiv e1 e2) = checkExpType (EAdd e1 e2)
 
 checkExpType (EInt _) = return ExpInt
 
+-- function call
+checkExpType (ECall f e) = do
+    st <- get
+    et <- checkExpType e
+    case ((head st) f, et) of
+        (Right ExpFunInt, ExpInt)    -> return ExpInt
+        (Right ExpFunFun, ExpFunInt) -> return ExpInt
+        (Left _, _)                  -> throwError err_undecl
+        otherwise                    -> throwError err_wrong_call
+
+-- increment, decrement
+checkExpType (EInc x) = do
+    st <- get
+    case (head st) x of
+        Right ExpInt -> return ExpInt
+        otherwise    -> throwError err_non_int
+
+checkExpType (EDec x) = checkExpType (EInc x)
+
+-- variable
+checkExpType (EVar x) = do
+    st <- get
+    case (head st) x of
+        Right tp -> return tp
+        otherwie -> throwError err_undecl
+
+-- boolean constants
+checkExpType BTrue  = return ExpBool
+checkExpType BFalse = return ExpBool
+
+-- comparisons
+checkExpType (BLe e1 e2) = do
+    t1 <- checkExpType e1
+    t2 <- checkExpType e2
+    case (t1, t2) of
+        (ExpInt, ExpInt) -> return ExpBool
+        otherwise        -> throwError err_non_int
+
+
+checkExpType (BLt e1 e2) = checkExpType (BLe e1 e2)
+checkExpType (BGe e1 e2) = checkExpType (BLe e1 e2)
+checkExpType (BGt e1 e2) = checkExpType (BLe e1 e2)
+checkExpType (BEq e1 e2) = checkExpType (BLe e1 e2)
+
+-- boolean operators
+checkExpType (BCon b1 b2) = do
+    t1 <- checkExpType b1
+    t2 <- checkExpType b2
+    case (t1, t2) of
+        (ExpBool, ExpBool) -> return ExpBool
+        otherwise          -> throwError err_non_int
+
+checkExpType (BAlt b1 b2) = checkExpType (BCon b1 b2)
+
+checkExpType (BNeg b) = do
+    tb <- checkExpType b
+    case tb of
+        ExpBool   -> return ExpBool
+        otherwise -> throwError err_non_bool
+
+-- lambdas
+checkExpType (FLam x stm) = do
+    modify pushState
+    modify $ updateCState x ExpInt
+    checkStmType stm
+    modify popState
+    return ExpFunInt
+
 -- declaration type checks
 checkDeclType (DVar tp x) =
     modify $ updateCState x (typeTranslate tp)
 
-{- checkDeclType (DFun f x Stm) = do -}
+checkDeclType (DFun f x stm) = do
+    modify pushState
+    modify $ updateCState f ExpFunInt
+    modify $ updateCState x ExpInt
+    checkStmType stm
+    modify popState
+    modify $ updateCState f ExpFunInt
 
-{- checkDeclType (DRFun f x Stm) = checkDeclType (DFun tp x Stm) -}
+checkDeclType (DRFun f x stm) = checkDeclType (DFun f x stm)
 
-{- checkDeclType (DFFun f x) = -}
-    {- modify $ updateCState x ExpFunFun -}
+checkDeclType (DFFun f x stm) = do
+    modify pushState
+    modify $ updateCState f ExpFunFun
+    modify $ updateCState x ExpFunInt
+    checkStmType stm
+    modify popState
+    modify $ updateCState f ExpFunFun
