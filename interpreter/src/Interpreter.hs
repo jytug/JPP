@@ -11,6 +11,8 @@ import LexLang
 import ParLang
 
 -- global imports
+import Control.Applicative
+
 import Control.Monad.Except
 import Control.Monad.State
 import Data.Functor.Identity
