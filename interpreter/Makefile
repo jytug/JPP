@@ -1,4 +1,4 @@
-all: genPar compile
+all: compile
 
 genPar:
 	cd src && bnfc ../spec/lang.bnfc -haskell
@@ -8,5 +8,7 @@ compile:
 	ghc --make Main.hs -o ../interpreter
 
 clean:
-	rm -f interpreter && cd src && rm -f *.log *.aux *.hi *.o *.dvi &&\
-	rm -f DocLang.* LexLang.* ParLang.* LayoutLang.* SkelLang.* PrintLang.* TestLang.* AbsLang.* TestLang ErrM.* SharedString.* ComposOp.* lang.dtd XMLLang.* Makefile*
+	rm -f interpreter && cd src && rm -f *.log *.aux *.hi *.o *.dvi
+
+distclean: clean
+	cf src && rm -f DocLang.* LexLang.* ParLang.* LayoutLang.* SkelLang.* PrintLang.* TestLang.* AbsLang.* TestLang ErrM.* SharedString.* ComposOp.* lang.dtd XMLLang.* Makefile*
