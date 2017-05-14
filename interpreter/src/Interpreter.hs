@@ -1,6 +1,6 @@
 -- this module exports semantic functions
 -- for interpreting the language
-module Interpreter where (runProg)
+module Interpreter (runProg) where
 
 -- local imports
 import Common
