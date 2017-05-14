@@ -79,28 +79,29 @@ Prog : Stm { AbsLang.Program $1 }
 Exp :: { Exp }
 Exp : Exp '+' Exp1 { AbsLang.EAdd $1 $3 }
     | Exp '-' Exp1 { AbsLang.ESub $1 $3 }
-    | Ident '(' Exp ')' { AbsLang.ECall $1 $3 }
-    | Ident '++' { AbsLang.EInc $1 }
-    | Ident '--' { AbsLang.EDec $1 }
-    | Ident { AbsLang.EVar $1 }
     | Exp1 { $1 }
+    | Exp '<=' Exp1 { AbsLang.BLe $1 $3 }
+    | Exp '<' Exp1 { AbsLang.BLt $1 $3 }
+    | Exp '>=' Exp1 { AbsLang.BGe $1 $3 }
+    | Exp '>' Exp1 { AbsLang.BGt $1 $3 }
+    | Exp '==' Exp1 { AbsLang.BEq $1 $3 }
     | Exp 'and' Exp1 { AbsLang.BCon $1 $3 }
     | Exp 'or' Exp1 { AbsLang.BAlt $1 $3 }
-    | 'not' Exp1 { AbsLang.BNeg $2 }
     | 'lambda' '(' Ident ')' ':' Stm { AbsLang.FLam $3 $6 }
 Exp1 :: { Exp }
 Exp1 : Exp1 '*' Exp2 { AbsLang.EMul $1 $3 }
      | Exp1 '/' Exp2 { AbsLang.EDiv $1 $3 }
+     | Ident '(' Exp ')' { AbsLang.ECall $1 $3 }
      | Exp2 { $1 }
+     | 'not' Exp2 { AbsLang.BNeg $2 }
+Exp2 :: { Exp }
+Exp2 : Integer { AbsLang.EInt $1 }
+     | Ident '++' { AbsLang.EInc $1 }
+     | Ident '--' { AbsLang.EDec $1 }
+     | Ident { AbsLang.EVar $1 }
+     | '(' Exp ')' { $2 }
      | 'true' { AbsLang.BTrue }
      | 'false' { AbsLang.BFalse }
-     | Exp '<=' Exp { AbsLang.BLe $1 $3 }
-     | Exp '<' Exp { AbsLang.BLt $1 $3 }
-     | Exp '>=' Exp { AbsLang.BGe $1 $3 }
-     | Exp '>' Exp { AbsLang.BGt $1 $3 }
-     | Exp '==' Exp { AbsLang.BEq $1 $3 }
-Exp2 :: { Exp }
-Exp2 : Integer { AbsLang.EInt $1 } | '(' Exp ')' { $2 }
 ListStm :: { [Stm] }
 ListStm : {- empty -} { [] }
         | Stm ListStm { (:) $1 $2 }

@@ -1,2 +1,5 @@
 // simple if-else statement
-if true then print 1 else print 2
+{
+    if true then print 1 else print 2;
+    if false then print 1 else print 2
+}

@@ -1,5 +1,6 @@
 -- local imports
 import TypeChecker
+import Interpreter
 
 import AbsLang
 import ParLang
@@ -16,10 +17,15 @@ usageError :: IO ()
 usageError = do
     putStrLn "usage: ./Main <program file>"
 
-checkType :: Prog -> IO ()
-checkType program = do
+run :: Prog -> IO ()
+run program = do
     case typeProg program of
-        (Right _)    -> putStrLn "program type checking went well"
+        (Right _)    -> do
+            result <- runProg program
+            case result of
+                Left error -> putStrLn $ "interpreter error: " ++ error
+                otherwise  -> return ()
+                
         (Left error) -> putStrLn $ "type error: " ++ error
 
 main :: IO ()
@@ -30,5 +36,5 @@ main = do
         file:_ -> do
             program <- readFile file
             case parser program of
-                Ok prog   -> checkType prog
+                Ok prog   -> run prog
                 Bad error -> putStrLn error

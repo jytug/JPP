@@ -1,0 +1,10 @@
+// simple block
+
+{
+    if true then print 1;
+    if false then print 2;
+    if (true and false) then print 3;
+    if (true or false) then print 4;
+    return 123;
+    if true then print 5
+}

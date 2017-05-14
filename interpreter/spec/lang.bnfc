@@ -10,24 +10,24 @@ EMul.   Exp1    ::= Exp1 "*" Exp2 ;
 EDiv.   Exp1    ::= Exp1 "/" Exp2 ;
 EInt.   Exp2    ::= Integer ;
 
-ECall.  Exp     ::= Ident "(" Exp ")" ;
-EInc.   Exp     ::= Ident "++" ;
-EDec.   Exp     ::= Ident "--" ;
-EVar.   Exp     ::= Ident ;
+ECall.  Exp1    ::= Ident "(" Exp ")" ;
+EInc.   Exp2    ::= Ident "++" ;
+EDec.   Exp2    ::= Ident "--" ;
+EVar.   Exp2    ::= Ident ;
 
 coercions Exp 2 ;
 
 -- Boolean expressions
-BTrue.  Exp1   ::= "true" ;
-BFalse. Exp1   ::= "false" ;
-BLe.    Exp1   ::= Exp "<=" Exp ;
-BLt.    Exp1   ::= Exp "<" Exp ;
-BGe.    Exp1   ::= Exp ">=" Exp ;
-BGt.    Exp1   ::= Exp ">" Exp ;
-BEq.    Exp1   ::= Exp "==" Exp ;
+BTrue.  Exp2   ::= "true" ;
+BFalse. Exp2   ::= "false" ;
+BLe.    Exp    ::= Exp "<=" Exp1 ;
+BLt.    Exp    ::= Exp "<" Exp1 ;
+BGe.    Exp    ::= Exp ">=" Exp1 ;
+BGt.    Exp    ::= Exp ">" Exp1 ;
+BEq.    Exp    ::= Exp "==" Exp1 ;
 BCon.   Exp    ::= Exp "and" Exp1 ;
 BAlt.   Exp    ::= Exp "or" Exp1 ;
-BNeg.   Exp    ::= "not" Exp1 ;
+BNeg.   Exp1   ::= "not" Exp2 ;
 
 -- Functional expressions
 FLam.   Exp    ::= "lambda" "(" Ident ")" ":" Stm;
@@ -42,7 +42,7 @@ SAss.   Stm     ::= Ident "=" Exp ;
 SWhile. Stm     ::= "while" Exp "do" Stm ;
 SIf.    Stm     ::= "if" Exp "then" Stm ;
 SIfEl.  Stm     ::= "if" Exp "then" Stm "else" Stm ;
-SBlock. Stm     ::= "{" [Decl] [Stm] "}" ;
+SBlock. Stm     ::= "{" [Decl]  [Stm] "}" ;
 SPrint. Stm     ::= "print" Exp ;
 SFor.   Stm     ::= "for" Ident "ranging" "from" Exp "to" Exp "do" Stm ;
 SRet.   Stm     ::= "return" Exp ;
