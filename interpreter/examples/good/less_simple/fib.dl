@@ -1,6 +1,7 @@
+// use of recursion - should print 55
 {
     function fib(n) {
-        if n <= 1 then return n else return (fib((n-1)) + fib((n-2)));
+        if n <= 1 then return n else return (fib(n-1) + fib(n-2));
     }.
-    print fib(3);
+    print fib(10);
 }

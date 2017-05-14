@@ -1,0 +1,10 @@
+// should print 1
+{
+    function f(z) return 1,
+    function g(z) return f(z).
+
+    {
+        function f(z) return 2
+        print g(0)
+    }
+}

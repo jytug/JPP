@@ -1,0 +1,10 @@
+{
+    function f(ref x) {
+        x = 123
+    },
+    int y,
+    int z.
+
+    z = f(y);
+    print y
+}

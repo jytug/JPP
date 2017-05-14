@@ -1,0 +1,11 @@
+// should print 2
+{
+    function f(x) return 1,
+    function g(fun f) return f(0),
+    function h(fun f) return 2,
+    int z.
+
+    g = h;
+    z = g(f);
+    print z
+}

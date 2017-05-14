@@ -1,0 +1,8 @@
+// one can assign a lambda to an appropriate
+// identifier
+
+{
+    function f(z) return 1.
+    f = lambda(x): return 2;
+    print f(1)
+}

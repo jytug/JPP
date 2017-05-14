@@ -1,0 +1,2 @@
+// should print 2
+if false then print 1 else if true then print 2 else print 3

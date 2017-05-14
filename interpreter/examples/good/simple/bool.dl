@@ -1,0 +1,5 @@
+{
+    bool b.
+    b = true and false or true;
+    if b then print 123
+}

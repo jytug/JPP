@@ -1,0 +1,11 @@
+// should output 2
+{
+    function f(ref x) x = 1,
+    function g(ref x) x = 2,
+    int x,
+    int y
+    .
+    f = g;
+    y = f(x);
+    print x
+}

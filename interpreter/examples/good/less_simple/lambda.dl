@@ -1,0 +1,15 @@
+// more sophisticated lambda use
+// (also a proof this language isn't the fastest)
+
+{
+    function foo(fun g) {
+        int x.
+        while true do {
+            if g(x) == 1 then return x;
+            x = x + 1
+        }        
+    },
+    int y.
+    y = foo(lambda (x): return 1000-x);
+    print y
+}

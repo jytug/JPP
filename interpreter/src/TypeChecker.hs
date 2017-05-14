@@ -24,12 +24,14 @@ err_non_bool    = "use of a non-boolean expression in wrong context"
 err_non_int     = "use of a non-integer expression in wrong context"
 err_non_call    = "attempt to call a non-callable"
 err_wrong_call  = "poor attempt to call a function"
+err_rvalue      = "attempt to pass a reference to an rvalue"
 
 data ExpType
         = ExpInt
         | ExpBool
+        | ExpFun
+        | ExpFunRef
         | ExpFunFun
-        | ExpFunInt
   deriving (Eq, Ord, Show, Read)
 
 typeTranslate :: Type -> ExpType
@@ -53,11 +55,10 @@ typeProg :: Prog -> Either String ()
 typeProg p = fst $ runIdentity $ (flip runStateT) [const $ Left ()] $
              runExceptT $ checkProgType p
 
--- program type check
+{- PROGRAM TYPE CHECK -}
 checkProgType (Program stm) = checkStmType stm
 
--- statement type checks
-
+{- STATEMENT TYPE CHECKS -}
 -- assignment
 checkStmType (SAss x e) = do
     et <- checkExpType e
@@ -123,7 +124,7 @@ checkStmType (SRet e) = do
 checkStmType (SYield e) = checkStmType (SRet e)
 
 
--- expression type checks
+{- EXPRESSION TYPE CHECKS -}
 -- arithmetic operations
 checkExpType (EAdd e1 e2) = do
     t1 <- checkExpType e1
@@ -142,10 +143,14 @@ checkExpType (ECall f e) = do
     st <- get
     et <- checkExpType e
     case ((head st) f, et) of
-        (Right ExpFunInt, ExpInt)    -> return ExpInt
-        (Right ExpFunFun, ExpFunInt) -> return ExpInt
-        (Left _, _)                  -> throwError err_undecl
-        otherwise                    -> throwError err_wrong_call
+        (Right ExpFun, ExpInt)    -> return ExpInt
+        (Right ExpFunRef, _)
+            -> case e of
+                (EVar x)    -> return ExpInt
+                otherwise -> throwError err_rvalue
+        (Right ExpFunFun, ExpFun) -> return ExpInt
+        (Left _, _)               -> throwError err_undecl
+        otherwise                 -> throwError err_wrong_call
 
 -- increment, decrement
 checkExpType (EInc x) = do
@@ -203,7 +208,7 @@ checkExpType (FLam x stm) = do
     modify $ updateCState x ExpInt
     checkStmType stm
     modify popState
-    return ExpFunInt
+    return ExpFun
 
 -- declaration type checks
 checkDeclType (DVar tp x) =
@@ -211,18 +216,24 @@ checkDeclType (DVar tp x) =
 
 checkDeclType (DFun f x stm) = do
     modify pushState
-    modify $ updateCState f ExpFunInt
+    modify $ updateCState f ExpFun
     modify $ updateCState x ExpInt
     checkStmType stm
     modify popState
-    modify $ updateCState f ExpFunInt
+    modify $ updateCState f ExpFun
 
-checkDeclType (DRFun f x stm) = checkDeclType (DFun f x stm)
+checkDeclType (DRFun f x stm) = do
+    modify pushState
+    modify $ updateCState f ExpFunRef
+    modify $ updateCState x ExpInt
+    checkStmType stm
+    modify popState
+    modify $ updateCState f ExpFunRef
 
 checkDeclType (DFFun f x stm) = do
     modify pushState
     modify $ updateCState f ExpFunFun
-    modify $ updateCState x ExpFunInt
+    modify $ updateCState x ExpFun
     checkStmType stm
     modify popState
     modify $ updateCState f ExpFunFun

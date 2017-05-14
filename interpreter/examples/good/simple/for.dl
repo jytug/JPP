@@ -1,0 +1,3 @@
+// simple for loop
+
+for x ranging from 1 to 10 do print x

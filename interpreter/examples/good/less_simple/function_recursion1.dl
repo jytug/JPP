@@ -1,0 +1,14 @@
+// should print -6
+{
+    function f(fun g) {
+        int dummy.
+        if (g(0) <= 0) then {
+            print g(0)
+        } else {
+            int dummy.
+            dummy = f(lambda(x): return g(x) - 12)
+        }
+    },
+    int dummy.
+    dummy = f(lambda(x): return 30)
+}

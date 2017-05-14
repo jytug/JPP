@@ -1,0 +1,8 @@
+{
+    function f(ref x) {
+        x = x + 1
+    },
+    int y.
+
+    y = f(1)
+}

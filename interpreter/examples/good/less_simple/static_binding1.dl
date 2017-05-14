@@ -1,0 +1,15 @@
+// should print 0
+{
+    int x,
+    int y,
+    function f(z) return x + y.
+
+    {
+        int x,
+        int y.
+
+        x = 123;
+        y = 321;
+        print f(1)
+    }
+}

@@ -2,6 +2,8 @@
 import TypeChecker
 import Interpreter
 
+import Common
+
 import AbsLang
 import ParLang
 import LexLang
@@ -15,7 +17,7 @@ parser = pProg . myLexer
 
 usageError :: IO ()
 usageError = do
-    putStrLn "usage: ./Main <program file>"
+    putError "usage: ./interpreter <program file>"
 
 run :: Prog -> IO ()
 run program = do
@@ -23,10 +25,10 @@ run program = do
         (Right _)    -> do
             result <- runProg program
             case result of
-                Left error -> putStrLn $ "interpreter error: " ++ error
+                Left error -> putError $ "interpreter error: " ++ error
                 otherwise  -> return ()
                 
-        (Left error) -> putStrLn $ "type error: " ++ error
+        (Left error) -> putError $ "type error: " ++ error
 
 main :: IO ()
 main = do
@@ -37,4 +39,4 @@ main = do
             program <- readFile file
             case parser program of
                 Ok prog   -> run prog
-                Bad error -> putStrLn error
+                Bad error -> putError error

@@ -1,0 +1,8 @@
+// bad functional recursion
+
+{
+    function f(fun g) {
+        int x.
+        x = f(f)
+    }
+}

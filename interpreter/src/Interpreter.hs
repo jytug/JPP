@@ -1,6 +1,6 @@
 -- this module exports semantic functions
 -- for interpreting the language
-module Interpreter where
+module Interpreter where (runProg)
 
 -- local imports
 import Common
@@ -35,6 +35,9 @@ type IState = ([Env], Store, RHan, Loc)
 pushEnv, popEnv :: IState -> IState
 pushEnv = applyFst pushState
 popEnv = applyFst popState
+
+swapEnv :: Env -> IState -> IState
+swapEnv e = applyFst (\(x:xs) -> e:xs)
 
 initialIState :: IState
 initialIState = ([const 0], const NotThere, NotReturned, 0)
@@ -164,6 +167,7 @@ interpretStm (SFor x e1 e2 stm) = do
             modify pushEnv
             l <- newLoc
             modify $ updateEnv x l
+            modify $ updateStore l (VarInt n1)
             interpretStm (SFor x e1 e2 stm)
             modify popEnv
 
@@ -232,14 +236,20 @@ interpretExp (ECall f e) = do
             (newSt, rVal) <- fun g st
             put (env:envs, newSt, rh, loc)
             return $ VarInt rVal
-        VarFunRef fun -> throwError "this doesn't work yet!"
+        VarFunRef fun -> do
+                (newSt, rVal) <- fun (env x) st
+                put (env:envs, newSt, rh, loc)
+                return $ VarInt rVal
+            where (EVar x) = e
 
 -- increment, decrement
 interpretExp (EInc x) = interpretUnaryChange x (+1)
 interpretExp (EDec x) = interpretUnaryChange x (flip (-) $ 1)
 
 -- variable
-interpretExp (EVar x) = do interpretUnaryChange x id
+interpretExp (EVar x) = do
+    (env:envs, st, _, _) <- get
+    return $ (st . env) x
 
 -- boolean constants
 interpretExp (BTrue) = return $ VarBool True
@@ -262,9 +272,11 @@ interpretExp (BNeg b) = do
 
 -- lambdas
 interpretExp (FLam x stm) = do
+    (env:envs, _, _, _) <- get
     let fun :: Func
         fun n st = do
             modify pushEnv
+            modify $ swapEnv env
             l <- newLoc
             modify $ updateEnv x l
             modify $ updateStore l (VarInt n)
@@ -279,13 +291,16 @@ interpretExp (FLam x stm) = do
 -- declarations
 interpretDecl (DVar tp x) = do
     l <- newLoc
+    let (Ident vname) = x
     modify $ updateEnv x l
     modify $ updateStore l (translateType tp) 
 
 interpretDecl (DFun f x stm) = do
+    (env:envs, _, _, _) <- get
     let fun :: Func
         fun n st = do
             modify pushEnv
+            modify $ swapEnv env        -- for static binding
             l <- newLoc
             modify $ updateEnv x l
             modify $ updateStore l (VarInt n)
@@ -304,9 +319,11 @@ interpretDecl (DFun f x stm) = do
     return ()
 
 interpretDecl (DRFun f x stm) = do
+    (env:envs, _, _, _) <- get
     let fun :: FuncRef
         fun l st = do
             modify pushEnv
+            modify $ swapEnv env
             modify $ updateEnv x l
             l' <- newLoc
             modify $ updateEnv f l'
@@ -323,9 +340,11 @@ interpretDecl (DRFun f x stm) = do
     return ()
 
 interpretDecl (DFFun f x stm) = do
+    (env:envs, _, _, _) <- get
     let fun :: FuncFun
         fun g st = do
             modify pushEnv
+            modify $ swapEnv env
             l <- newLoc
             modify $ updateEnv x l
             modify $ updateStore l (VarFun g)

@@ -1,9 +1,7 @@
 {
     int x.
-    x = 10;
-    {
-        int y.
-        x = y
+    while x <= 10 do {
+        print x;
+        x = x++
     }
-    print x
 }

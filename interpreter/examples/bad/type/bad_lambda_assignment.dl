@@ -1,0 +1,5 @@
+{
+    function f(fun z) return 1.
+    f = lambda (x): return 2;
+    print f(1)
+}

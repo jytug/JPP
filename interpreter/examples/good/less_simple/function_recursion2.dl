@@ -1,0 +1,15 @@
+// should print -6
+{
+    function f(fun g) {
+        function sub(x) return g(x) - 12.
+        if (g(0) <= 0) then {
+            print g(0)
+        } else {
+            int dummy.
+            dummy = f(sub)
+        }
+    },
+    function thirty(x) return 30,
+    int dummy.
+    dummy = f(thirty);
+}
