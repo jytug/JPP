@@ -1,6 +1,32 @@
-%Dummy is gramatyka('E', [prod('E', [[nt('E'), +, nt('T')], [nt('T')]]),
-%                        prod('T', [[id], ['(', nt('E'), ')']]) ]).
+% ONLY FOR GPROLOG
+subset([],[]).
+subset([X|L],[X|S]) :-
+    subset(L,S).
+subset(L, [_|S]) :-
+    subset(L,S).
 
+difference([H|T1],L2,L3):-
+    member(H,L2),
+    difference(T1,L2,L3), !.
+difference([H|T1],L2,[H|L3]):-
+    difference(T1,L2,L3).
+
+difference([],_,[]). 
+% UNCOMMENT FOR SICSTUS
+% :- use_module(library(lists)).
+
+% ================================================
+%               Example grammars
+% ================================================
+dummy(gramatyka('E', [prod('E', [[nt('E'), +, nt('T')], [nt('T')]]),
+                        prod('T', [[id], ['(', nt('E'), ')']]) ])).
+
+dummy2(gramatyka('S', [prod('S', [[nt('A'), nt('A')]]),
+                      prod('A', [['a', nt('A')], ['b']])])).
+
+% ================================================
+%                  The code
+% ================================================
 % general, helpful predicates
 set_sum(L1, [], L1).
 set_sum(L1, [H2 | T2], Result) :-
@@ -9,12 +35,6 @@ set_sum(L1, [H2 | T2], Result) :-
     
 set_sum(L1, [H2 | T2], Result) :-
     set_sum([H2 | L1], T2, Result).
-
-% 'returns' a production list
-% with an additional nonterminal Z and
-% a production Z -> Starting
-augment_grammar(gramatyka(S, ProdList),
-                [prod('Z', [[nt(S)]]) | ProdList]).
 
 % adds a dot on the beginning of productions
 add_dot(prod(LHS, RHS), [prod(LHS, DRHS)]) :-
@@ -106,20 +126,38 @@ on_lhs(E, [_ | L]) :- on_lhs(E, L).
 
 % finds all transitions from a state (list of productions)
 transitions(State, AllProds, Result) :-
-    dotted_tks(State, AllProds, Tokens),
+    dotted_tks(State, Tokens),
     list_transitions(State, Tokens, AllProds, IntermediateResult),
-    closure(IntermediateResult, AllProds, Result).
+    closure_all(IntermediateResult, AllProds, Result).
+
+closure_all([], _, []).
+closure_all([trans(State, Tkn, NewState) | Rest], AllProds,
+            [trans(State, Tkn, NewClosedState) | ClosedRest]) :-
+        closure(NewState, AllProds, NewClosedState),
+        closure_all(Rest, AllProds, ClosedRest).
 
 list_transitions(_, [], _, []).
-list_transitions(State, [HToken | TToken], AllProds, Result) :-
-    shift_dot(State, HToken, newState),
-    list_transitions(State, TToken, AllProds, OtherResults),
-    Result = [trans(HToken, newState) | OtherResults].
+list_transitions(State, [HToken | TToken], AllProds,
+                 [trans(State, HToken, NewState) | OtherResults]) :-
+    shift_dot(State, HToken, NewState),
+    list_transitions(State, TToken, AllProds, OtherResults).
+
+contains_dotted1([H | _], Token) :-
+    contains_dotted2(H, Token), !.
+contains_dotted1([_ | T], Token) :-
+    contains_dotted1(T, Token).
+
+contains_dotted2([dot, Token | _], Token) :- !.
+contains_dotted2([_ | T], Token) :-
+    contains_dotted2(T, Token).
 
 shift_dot([], _, []).
 shift_dot([prod(NT, LProd) | Rest], Token,
           [prod(NT, NewLProd) | TResult]) :-
+    contains_dotted1(LProd, Token),
     shift_dot_list1(LProd, Token, NewLProd),
+    shift_dot(Rest, Token, TResult), !.
+shift_dot([prod(_, _) | Rest], Token, TResult) :-
     shift_dot(Rest, Token, TResult).
 
 shift_dot_list1([], _, []).
@@ -131,3 +169,45 @@ shift_dot_list2([], _, []).
 shift_dot_list2([dot, Token | T], Token, [Token, dot | T]) :- !.
 shift_dot_list2([X | T], Token, [X | Result]) :-
     shift_dot_list2(T, Token, Result).
+
+% Produces an initial state from a given Grammar
+initial_state(AllProds, State) :-
+    AllProds = [prod('Z', [[nt(S)]]) | _],
+    closure([prod('Z', [[dot, nt(S)]])], AllProds, State).
+
+augment_grammar(gramatyka(S, ProdList),
+                [prod('Z', [[nt(S)]]) | ProdList]).
+
+% Produces all states and transitions between them
+% given an initial state and the whole production list
+all_states_transitions(Grammar, States, Transitions) :-
+    augment_grammar(Grammar, AllProds),
+    initial_state(AllProds, InitState),
+    produce_graph([InitState], AllProds, [], [], States, Transitions).
+
+% Produces the whole graph with two accumulators:
+% for states and transitions respectively, and a
+% stack for not yet visited states
+produce_graph([], _, States, Transitions, States, Transitions).
+produce_graph([State | TState], AllProds, SAcc, TAcc, States, Transitions) :-
+    transitions(State, AllProds, NewTransitions),
+    subset(NewTransitions, TAcc),
+    produce_graph(TState, AllProds, SAcc, TAcc, States, Transitions), !.
+    
+produce_graph([State | TState], AllProds, SAcc, TAcc, States, Transitions) :-
+    transitions(State, AllProds, NewTransitions),
+    difference(NewTransitions, TAcc, OnlyNewTransitions),
+    extract_right_states(OnlyNewTransitions, NewStates),
+    difference(NewStates, SAcc, OnlyNewStates),
+    append(TState, OnlyNewStates, NewStack),
+    append(SAcc, OnlyNewStates, NewSAcc),
+    append(TAcc, OnlyNewTransitions, NewTAcc),
+    produce_graph(NewStack, AllProds, NewSAcc, NewTAcc, States, Transitions), !.
+
+extract_right_states([], []).
+extract_right_states([trans(_, _, State) | Rest1], [State | Rest2]) :-
+    extract_right_states(Rest1, Rest2).
+    
+% ================================================
+%                    HEJKA
+% ================================================
